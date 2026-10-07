@@ -74,10 +74,13 @@ const copy = {
     kpiResponse: 'Tempo médio de resposta',
     kpiResponded: 'Taxa de resposta',
     kpiShare: 'Participação no total',
-    kpiIad: 'IAD do recorte',
+    highestSectorIad: 'Maior IAD entre setores',
+    sectorIad: 'IAD do setor',
+    individualIads: 'IADs dos setores selecionados',
+    individualIadNote: 'Índices individuais; não há IAD combinado.',
     sectors: 'Setores analisados',
     exploreTitle: 'Explorar dados',
-    exploreText: 'Use o filtro para investigar setores específicos ou criar um recorte combinado. Os indicadores abaixo recalculam a partir dos dados agregados do estudo.',
+    exploreText: 'Use o filtro para investigar setores específicos ou criar um recorte combinado. Volumes, taxas e médias refletem a seleção; os IADs permanecem individuais por setor.',
     filterLabel: 'Recorte de setores',
     filterButton: 'Selecionar setores',
     filterSearch: 'Buscar setor...',
@@ -91,7 +94,7 @@ const copy = {
     summaryTitle: 'Resumo do recorte',
     summaryTextAll: 'Sem filtro ativo, o painel mostra o comportamento geral da base analisada.',
     summaryTextOne: 'Com um setor selecionado, o painel vira uma leitura de benchmark contra a média geral.',
-    summaryTextMany: 'Com múltiplos setores, o painel trata a seleção como um recorte combinado. É útil para comparar grupos, mas não deve ser lido como um novo setor real.',
+    summaryTextMany: 'Volumes, taxas e médias são agregados para a seleção. Os IADs são apresentados por setor, sem média ou índice combinado.',
     rankingTitleAll: 'Ranking de atrito por setor',
     rankingTitleSelected: 'Comparação do recorte selecionado',
     rankingSubtitleAll: 'Clique em uma barra para focar o setor. O IAD combina volume, não resolução, baixa satisfação e demora de resposta.',
@@ -113,7 +116,7 @@ const copy = {
     methodTitle: 'Metodologia',
     methodIntro: 'Os dados foram agregados a partir dos quatro arquivos mensais oficiais do Consumidor.gov.br de janeiro a abril de 2026. O recorte principal usa Data Finalização, não Data Abertura.',
     iadTitle: 'Como o IAD foi calculado',
-    iadText: 'O Índice de Atrito Digital é uma proxy de 0 a 100. Ele não é nota oficial de qualidade. Ele combina dimensões públicas que, juntas, ajudam a priorizar investigação.',
+    iadText: 'O Índice de Atrito Digital é um índice exploratório autoral de 0 a 100. Valores maiores indicam maior atrito segundo essa combinação. Os índices calculados pelo pipeline são preservados ao filtrar setores; não são uma nota oficial de qualidade.',
     volume: 'Volume relativo',
     nonResolution: 'Não resolução',
     lowSatisfaction: 'Baixa satisfação',
@@ -167,10 +170,13 @@ const copy = {
     kpiResponse: 'Average response time',
     kpiResponded: 'Response rate',
     kpiShare: 'Share of total',
-    kpiIad: 'DFI of cut',
+    highestSectorIad: 'Highest DFI among sectors',
+    sectorIad: 'Sector DFI',
+    individualIads: 'Selected sectors’ DFI',
+    individualIadNote: 'Individual indices; no combined DFI.',
     sectors: 'Sectors analyzed',
     exploreTitle: 'Explore data',
-    exploreText: 'Use the filter to investigate specific sectors or create a combined cut. The indicators below recalculate from the aggregated study data.',
+    exploreText: 'Use the filter to investigate specific sectors or create a combined selection. Volumes, rates and averages reflect the selection; DFI remains individual for each sector.',
     filterLabel: 'Sector cut',
     filterButton: 'Select sectors',
     filterSearch: 'Search sector...',
@@ -184,7 +190,7 @@ const copy = {
     summaryTitle: 'Cut summary',
     summaryTextAll: 'With no active filter, the panel shows the overall behavior of the analyzed base.',
     summaryTextOne: 'With one sector selected, the panel becomes a benchmark against the overall average.',
-    summaryTextMany: 'With multiple sectors, the panel treats the selection as a combined cut. It is useful for comparing groups, but should not be read as a new real sector.',
+    summaryTextMany: 'Volumes, rates and averages are aggregated for the selection. DFI is shown per sector, without an average or combined index.',
     rankingTitleAll: 'Friction ranking by sector',
     rankingTitleSelected: 'Selected cut comparison',
     rankingSubtitleAll: 'Click a bar to focus a sector. DFI combines volume, non-resolution, low satisfaction and response delay.',
@@ -206,7 +212,7 @@ const copy = {
     methodTitle: 'Methodology',
     methodIntro: 'The data was aggregated from the four official monthly files from Consumidor.gov.br from January to April 2026. The main cut uses finalization date, not opening date.',
     iadTitle: 'How the DFI was calculated',
-    iadText: 'The Digital Friction Index is a 0 to 100 proxy. It is not an official quality score. It combines public dimensions that, together, help prioritize investigation.',
+    iadText: 'The Digital Friction Index is an original exploratory index from 0 to 100. Higher values indicate more friction according to this combination. Pipeline indices are preserved when filtering sectors; they are not official quality scores.',
     volume: 'Relative volume',
     nonResolution: 'Non-resolution',
     lowSatisfaction: 'Low satisfaction',
@@ -237,10 +243,6 @@ function normalize(input: string) {
 
 function safeDiv(a: number, b: number) {
   return b > 0 ? a / b : null;
-}
-
-function clamp01(value: number) {
-  return Math.max(0, Math.min(1, value));
 }
 
 function useFormat(lang: Lang) {
@@ -282,20 +284,6 @@ function aggregateRows(rows: Array<Partial<MetricRow>>): MetricRow {
   };
 }
 
-function computeIadForMetric(metric: MetricRow, segmentRows: MetricRow[]) {
-  const logs = segmentRows.map((row) => Math.log1p(row.total));
-  const minLog = Math.min(...logs);
-  const maxLog = Math.max(...logs);
-  const responseValues = segmentRows.map((row) => Number(row.avgResponseTime ?? 0)).filter((value) => value > 0);
-  const minResponse = Math.min(...responseValues);
-  const maxResponse = Math.max(...responseValues);
-  const volumeScore = maxLog === minLog ? 0 : clamp01((Math.log1p(metric.total) - minLog) / (maxLog - minLog));
-  const nonResolutionScore = metric.resolutionRate === null || metric.resolutionRate === undefined ? 0 : clamp01(1 - metric.resolutionRate);
-  const lowSatisfactionScore = metric.avgSatisfaction === null || metric.avgSatisfaction === undefined ? 0 : clamp01(1 - ((metric.avgSatisfaction - 1) / 4));
-  const delayScore = maxResponse === minResponse || !metric.avgResponseTime ? 0 : clamp01((metric.avgResponseTime - minResponse) / (maxResponse - minResponse));
-  return Math.round(1000 * (0.3 * volumeScore + 0.3 * nonResolutionScore + 0.25 * lowSatisfactionScore + 0.15 * delayScore)) / 10;
-}
-
 function aggregateByMonth(rows: MonthlyRow[], months: string[]) {
   return months.map((month) => {
     const monthRows = rows.filter((row) => row.month === month);
@@ -331,7 +319,6 @@ function App() {
   const c = copy[lang];
   const fmt = useFormat(lang);
 
-  const segmentRows = useMemo(() => Object.values(data.segments).sort((a, b) => (b.iad ?? 0) - (a.iad ?? 0)), []);
   const allSectorNames = useMemo(() => Object.keys(data.segments).sort((a, b) => a.localeCompare(b)), []);
   const months = useMemo(() => data.monthly.map((item) => item.month), []);
   const hasFilter = selectedSegments.length > 0;
@@ -340,7 +327,7 @@ function App() {
   const scopeMetric = useMemo(() => {
     const allResolved = Math.round(data.kpis.evaluatedComplaints * data.kpis.resolutionRate);
     const allResponded = Math.round(data.kpis.totalComplaints * data.kpis.respondedRate);
-    const base = hasFilter ? aggregateRows(selectedRows) : {
+    return hasFilter ? aggregateRows(selectedRows) : {
       name: 'all',
       total: data.kpis.totalComplaints,
       evaluated: data.kpis.evaluatedComplaints,
@@ -352,8 +339,7 @@ function App() {
       avgResponseTime: data.kpis.avgResponseTime,
       share: 1
     } as MetricRow;
-    return { ...base, iad: hasFilter ? computeIadForMetric(base, segmentRows) : data.insights.highestFriction.iad };
-  }, [hasFilter, selectedRows, segmentRows]);
+  }, [hasFilter, selectedRows]);
 
   const monthlyRows = useMemo(() => {
     if (!hasFilter) return data.monthly;
@@ -374,6 +360,8 @@ function App() {
     if (!hasFilter) return data.rankingIad.slice(0, 12);
     return [...selectedRows].sort((a, b) => Number(b.iad ?? 0) - Number(a.iad ?? 0));
   }, [hasFilter, selectedRows]);
+
+  const iadRows = hasFilter ? rankingRows : [data.segments[data.insights.highestFriction.segment]];
 
   const filteredOptions = useMemo(() => {
     const q = normalize(sectorSearch.trim());
@@ -453,7 +441,7 @@ function App() {
                 <p className="signature">{c.byline}</p>
               </div>
               <div className="hero-panel glass-card">
-                <span className="panel-label">{c.iad}</span>
+                <span className="panel-label">{c.highestSectorIad}</span>
                 <strong>{fmt.decimal(data.insights.highestFriction.iad, 1)}</strong>
                 <p>{data.insights.highestFriction.segment}</p>
                 <div className="mini-grid">
@@ -532,9 +520,17 @@ function App() {
                   <h2>{scopeLabel}</h2>
                   <p>{selectedSegments.length === 0 ? c.summaryTextAll : selectedSegments.length === 1 ? c.summaryTextOne : c.summaryTextMany}</p>
                 </div>
-                <div className="summary-iad">
-                  <span>{c.kpiIad}</span>
-                  <strong>{fmt.decimal(scopeMetric.iad, 1)}</strong>
+                <div className={`summary-iad ${selectedSegments.length > 1 ? 'iad-multiple' : ''}`}>
+                  <span>{!hasFilter ? c.highestSectorIad : selectedSegments.length === 1 ? c.sectorIad : c.individualIads}</span>
+                  <div className="iad-values">
+                    {iadRows.map((row) => (
+                      <div className="iad-item" key={row.name}>
+                        <strong>{fmt.decimal(row.iad, 1)}</strong>
+                        <small>{row.name}</small>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedSegments.length > 1 && <p className="iad-note">{c.individualIadNote}</p>}
                 </div>
               </div>
               <div className="kpi-grid">
@@ -573,7 +569,7 @@ function App() {
                 <span className="eyebrow">{c.signalsTitle}</span>
               </div>
               <div className="insight-grid">
-                <Insight title={lang === 'pt' ? 'Maior atrito' : 'Highest friction'} value={rankingRows[0]?.name ?? data.insights.highestFriction.segment} detail={`${c.iad}: ${fmt.decimal(rankingRows[0]?.iad ?? scopeMetric.iad, 1)}`} />
+                <Insight title={lang === 'pt' ? 'Maior atrito' : 'Highest friction'} value={rankingRows[0]?.name ?? data.insights.highestFriction.segment} detail={`${c.iad}: ${fmt.decimal(rankingRows[0]?.iad ?? data.insights.highestFriction.iad, 1)}`} />
                 <Insight title={lang === 'pt' ? 'Volume do recorte' : 'Selected volume'} value={fmt.number(scopeMetric.total)} detail={`${fmt.percent(scopeMetric.share)} ${lang === 'pt' ? 'do total analisado' : 'of analyzed total'}`} />
                 <Insight title={lang === 'pt' ? 'Problema mais frequente' : 'Most frequent problem'} value={problemRows[0]?.name ?? data.insights.topProblem.name} detail={`${fmt.number(problemRows[0]?.total ?? data.insights.topProblem.total)} ${c.records}`} />
                 <Insight title={lang === 'pt' ? 'Tempo médio' : 'Average response'} value={`${fmt.decimal(scopeMetric.avgResponseTime, 1)} ${c.days}`} detail={lang === 'pt' ? 'sinal operacional do recorte' : 'operational signal of the cut'} />

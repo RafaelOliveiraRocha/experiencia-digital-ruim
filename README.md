@@ -1,124 +1,126 @@
 # Quanto custa uma experiência digital ruim?
 
-Projeto público de BI e produto de dados criado para analisar sinais de atrito, resolução e satisfação nas relações de consumo digitais no Brasil.
+Estudo autoral de BI e produto de dados, publicado por Rafael Rocha em maio de 2026. Transforma reclamações do Consumidor.gov.br em indicadores de resolução, satisfação, resposta e atrito, com dashboard interativo em português e inglês.
 
-A base usada nesta versão foi processada a partir de quatro arquivos oficiais do Consumidor.gov.br:
+A pergunta do título orienta uma leitura de esforço e atrito. O dashboard **não calcula custo monetário** nem consulta uma API em tempo de execução: usa o JSON agregado versionado em `src/data/dashboardData.json`.
 
-- Janeiro de 2026
-- Fevereiro de 2026
-- Março de 2026
-- Abril de 2026
+![Dashboard real com Estabelecimentos de Ensino selecionado](docs/images/experiencia-digital-ruim.png)
 
-O recorte principal usa `Data Finalização`, porque os arquivos mensais trazem reclamações finalizadas no mês de referência.
+## O que você pode explorar
 
-## O que o projeto entrega
+- KPIs gerais e por seleção de setores.
+- Rankings de IAD, quadrante de resolução/satisfação, evolução mensal, grupos de problemas e canais declarados.
+- Busca e multisseleção de setores, limpeza do filtro e navegação PT-BR/EN.
+- Leituras executivas pré-escritas, contextualizadas pelos dados; não são um chatbot.
+- Metodologia e conteúdos editoriais em `content/`.
 
-- Dashboard interativo em React + Vite + TypeScript
-- Versão PT-BR e EN com seletor de idioma
-- KPIs, rankings e gráficos exploratórios
-- Filtro global multi-seleção com recálculo dos indicadores
-- IAD, Índice de Atrito Digital
-- Leituras guiadas pelos dados, sem simular chatbot
-- Metodologia e conteúdos editoriais para LinkedIn
-- Dados processados em JSON leve
+## Executar o dashboard
 
-## Como rodar localmente
+Use **Node 20.19+ ou 22.12+** e **pnpm 10.4.1**, conforme o Vite instalado e `packageManager`. Ambiente conferido no Linux: Node 22.23.1, pnpm 10.4.1, React 19.2.6, TypeScript 5.9.3 e Vite 7.3.3. As versões JavaScript são resolvidas pelo lockfile existente.
+
+Na raiz do checkout, em Bash:
 
 ```bash
-pnpm install
-pnpm dev
+pnpm install --frozen-lockfile
+pnpm dev --host 127.0.0.1
 ```
 
-Depois abra:
+Abra **http://localhost:3000/experiencia-digital-ruim/**. Não precisa baixar CSVs, configurar chaves ou executar Python para explorar os dados disponíveis. Encerre com `Ctrl+C`.
 
-```txt
-http://localhost:3000/
-```
-
-## Como gerar build
+Para conferir tipos e gerar os arquivos estáticos:
 
 ```bash
+pnpm typecheck
 pnpm build
+pnpm preview --host 127.0.0.1
 ```
 
-O build final será gerado na pasta:
+O build fica em `dist/`. O preview usa a mesma subpasta configurada em `vite.config.ts`. Há um workflow de GitHub Pages para `RochaRafa`; executar localmente não publica o projeto.
 
-```txt
-dist/
-```
+## Fonte e cobertura histórica
 
-## Como publicar gratuitamente
+Fonte: [dados abertos do Consumidor.gov.br](https://dados.mj.gov.br/dataset/reclamacoes-do-consumidor-gov-br). O recorte considera **Data Finalização de janeiro a abril de 2026**; a abertura pode ter ocorrido antes.
 
-### Vercel
+| Arquivo de origem registrado | Linhas |
+|---|---:|
+| `basecompleta2026-01.csv` | 321.111 |
+| `basecompleta2026-02.csv` | 341.707 |
+| `basecompleta2026-03.csv` | 342.527 |
+| `basecompleta2026-04.csv` | 375.043 |
+| Base global | **1.380.388** |
 
-1. Suba este projeto para um repositório no GitHub.
-2. Acesse a Vercel.
-3. Importe o repositório.
-4. Use as configurações padrão para Vite.
-5. Build command: `pnpm build`
-6. Output directory: `dist`
+O volume é contado por **linhas, sem deduplicação por identificador**. O ranking e o seletor incluem somente setores com **pelo menos 300 reclamações** no período: os **39 setores** atuais somam **1.379.792 registros**. Os 596 restantes entram nos KPIs globais, mas não nos setores selecionáveis. Selecionar todos os setores disponíveis não reproduz exatamente a cobertura global.
 
-### Netlify
+## Indicadores e IAD
 
-1. Suba este projeto para um repositório no GitHub.
-2. Acesse a Netlify.
-3. Importe o repositório.
-4. Build command: `pnpm build`
-5. Publish directory: `dist`
+- Resposta: registros com `Respondida = S` / total de registros.
+- Resolução: `Resolvida` / avaliações `Resolvida` ou `Não Resolvida`.
+- Satisfação: soma das notas / quantidade de notas numéricas disponíveis.
+- Demora: soma dos tempos / quantidade de tempos numéricos disponíveis, independentemente do flag de resposta.
 
-### GitHub Pages
+Taxas e médias de uma seleção usam as somas e contagens originais, não médias simples das taxas de cada setor. As parcelas sem denominador retornam ausentes na interface.
 
-Para GitHub Pages, pode ser necessário ajustar `base` no `vite.config.ts` se o deploy for em subpasta.
+O **Índice de Atrito Digital (IAD)** é um índice exploratório autoral de **0–100**; valores maiores indicam maior atrito segundo essa combinação. A referência é o pipeline Python: 30% volume, 30% não resolução, 25% baixa satisfação e 15% demora. A demora é limitada ao p95 das médias dos setores elegíveis antes de normalizar; ausentes recebem valores globais e os fallbacks originais. A população de referência é fixa, sem renormalização ao filtrar.
 
-## Como reproduzir os dados
+Na interface:
 
-Os CSVs brutos não foram incluídos no zip final porque são grandes. Para reproduzir:
+- **Sem filtro:** “Maior IAD entre setores”, com o nome do setor. O **78,2** pertence a **Bancos, Financeiras e Administradoras de Cartão**.
+- **Um setor:** IAD armazenado no JSON, igual no resumo, ranking e benchmark. **Estabelecimentos de Ensino: 70,4**.
+- **Vários setores:** volumes, taxas e médias agregados; IADs individuais com seus nomes. Não há média de IADs nem índice combinado.
 
-1. Crie uma pasta `raw_data/` na raiz do projeto.
-2. Coloque nela os arquivos CSV baixados do Consumidor.gov.br.
-3. Rode:
+O pipeline calcula antes de arredondar. O JSON preserva o IAD com uma casa decimal, médias com duas, taxas/componentes e somas com quatro, e participação com seis. O filtro recompõe taxas e médias pelas somas e contagens, mas **não recalcula o IAD**. Veja a [metodologia completa](content/metodologia.md).
+
+## Reconstrução opcional dos dados
+
+A execução com o JSON existente foi validada. **A ingestão integral dos quatro CSVs originais não foi validada nesta revisão**, pois eles não estavam disponíveis nas pastas consultadas. O JSON e o [QA histórico](docs/data_qa_summary.md) foram preservados.
+
+O pipeline requer Python e `requirements.txt`. Ambiente verificado: Python 3.10.12, pandas 2.3.3 e NumPy 2.2.6. Preparação em Bash:
 
 ```bash
-python3 scripts/build_dataset.py --raw-dir raw_data --out-dir src/data
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-Isso atualiza:
+Baixe os quatro arquivos para uma pasta separada. O leitor usa `;`, `utf-8-sig` e as colunas da metodologia. Lê todos os `*.csv` da pasta; evite cópias duplicadas ou arquivos alheios ao recorte.
 
-```txt
-src/data/dashboardData.json
+**O QA é escrito em `docs/data_qa_summary.md` relativo ao diretório corrente, mesmo com outro `--out-dir`.** Para preservar os arquivos históricos, execute o script a partir de um diretório temporário. Substitua `/caminho/para/os/csvs` pelo caminho absoluto da entrada:
+
+```bash
+project_root="$PWD"
+pipeline_run="$(mktemp -d)"
+cd "$pipeline_run"
+python "$project_root/scripts/build_dataset.py" \
+  --raw-dir /caminho/para/os/csvs \
+  --out-dir "$pipeline_run/data"
+cd "$project_root"
 ```
 
-E também gera um resumo em:
+O JSON estará em `data/` e o QA em `docs/`, ambos dentro de `pipeline_run`. Inspecione-os separadamente; o comando não substitui a base histórica do dashboard.
 
-```txt
-docs/data_qa_summary.md
+## Verificações
+
+Com as dependências correspondentes instaladas:
+
+```bash
+pnpm typecheck
+pnpm build
+python -m pip check
+python -m unittest discover -s tests -v
 ```
 
-## Metodologia resumida
+Os testes Python executam as funções originais sobre fixtures pequenas e agregados existentes, sem importar o pipeline completo, ingerir CSVs ou sobrescrever o QA. A regressão de interface usa Playwright como ferramenta opcional, fora das dependências da aplicação:
 
-O IAD combina quatro dimensões:
+```bash
+python -m pip install playwright
+python -m playwright install chromium
+python tests/validate_dashboard.py --url http://localhost:3000/experiencia-digital-ruim/
+```
 
-- 30% volume relativo
-- 30% taxa de não resolução
-- 25% baixa satisfação
-- 15% tempo médio de resposta
+Ela confere os 39 índices no resumo/ranking/benchmark, agregações, busca, limpeza, idiomas, navegação e layout desktop/mobile. Para usar Chrome instalado, passe `--browser-executable /caminho/para/google-chrome`. A opção `--capture docs/images/experiencia-digital-ruim.png` registra a demonstração real.
 
-O índice é uma proxy exploratória. Ele não é uma nota oficial e não deve ser lido como julgamento absoluto de qualidade.
+## Limitações
 
-## Conteúdos incluídos
+A fonte representa reclamações do canal público, não todos os consumidores. Volume não mede base de clientes ou qualidade absoluta; resolução não equivale a satisfação. O IAD ajuda a priorizar perguntas, não substitui diagnóstico operacional. Não há medida monetária ou integração em tempo de execução com a fonte. A reconstrução integral continua pendente; o build atual emite um aviso de chunk maior que 500 kB, sem impedir sua geração.
 
-A pasta `content/` contém:
-
-- artigo em português
-- artigo em inglês
-- post para LinkedIn
-- roteiro de carrossel
-- metodologia completa
-
-## Autor
-
-Rafael Rocha
-
-Data Analyst | BI, Data Products & AI
-
-Portfólio: https://rafaeloliveirarocha.github.io/
+Autor: **Rafael Rocha — Data Analyst | BI, Data Products & AI**.
