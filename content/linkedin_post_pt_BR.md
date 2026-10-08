@@ -21,6 +21,6 @@ O que mais me interessou no estudo foi perceber que experiência ruim não apare
 
 Montei o projeto como dashboard interativo, com metodologia aberta, visual executivo, filtro global funcional e leituras guiadas para explorar os principais sinais da base.
 
-Link do projeto: [inserir link depois do deploy]
+Link do projeto: https://github.com/RafaelOliveiraRocha/experiencia-digital-ruim
 
 Feedbacks são muito bem-vindos.

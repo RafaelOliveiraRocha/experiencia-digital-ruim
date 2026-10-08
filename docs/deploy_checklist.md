@@ -1,11 +1,15 @@
-# Checklist antes de publicar
+# Publicação estática com GitHub Pages
 
-- Rodar `pnpm install`
-- Rodar `pnpm dev` e validar o layout no navegador
-- Testar o seletor PT-BR e EN
-- Testar o filtro global de setores, inclusive multi-seleção
-- Testar a seção de leituras guiadas em PT-BR e EN
-- Rodar `pnpm build`
-- Conferir se não existe pasta ou referência a ferramentas externas de geração
-- Atualizar links de LinkedIn/GitHub se quiser expor no site
-- Publicar em Vercel, Netlify ou GitHub Pages
+O dashboard é uma aplicação Vite. O build gera os arquivos estáticos em `dist/`, com a subpasta `/experiencia-digital-ruim/` configurada em `vite.config.ts`.
+
+Para preparar o build local:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build
+```
+
+O workflow de GitHub Pages do repositório publica a versão da branch `RochaRafa`. A execução local dos comandos acima não publica o site. O conteúdo do dashboard vem do JSON versionado; publicar a interface não reconstrói os dados.
+
+Consulte o [README](../README.md) para versões de Node/pnpm, execução local e testes da interface.

@@ -6,7 +6,7 @@ Estudo exploratório autoral de Rafael Rocha, publicado em maio de 2026. O títu
 
 Fonte: [Consumidor.gov.br — portal de dados do Ministério da Justiça e Segurança Pública](https://dados.mj.gov.br/dataset/reclamacoes-do-consumidor-gov-br).
 
-Arquivos registrados: `basecompleta2026-01.csv`, `basecompleta2026-02.csv`, `basecompleta2026-03.csv` e `basecompleta2026-04.csv`. JSON e QA históricos registram **1.380.388 linhas brutas e usadas**, com zero exclusões por finalização fora de janeiro–abril/2026. A ingestão integral dos originais não foi repetida nesta revisão.
+Arquivos registrados: `basecompleta2026-01.csv`, `basecompleta2026-02.csv`, `basecompleta2026-03.csv` e `basecompleta2026-04.csv`. O JSON e o resumo de qualidade registram **1.380.388 linhas brutas e usadas**, com zero exclusões por finalização fora de janeiro–abril/2026.
 
 O script lê todos os CSVs da pasta, com `;` e `utf-8-sig`, em chunks de 100 mil. Requer: `Região`, `UF`, `Data Abertura`, `Data Finalização`, `Tempo Resposta`, `Segmento de Mercado`, `Área`, `Grupo Problema`, `Problema`, `Como Comprou Contratou`, `Respondida`, `Avaliação Reclamação` e `Nota do Consumidor`.
 
@@ -67,10 +67,10 @@ O Python calcula antes dos arredondamentos de exportação e aplica `.round(1)` 
 - **Um setor:** mesmo índice no ranking, resumo e benchmark: **Estabelecimentos de Ensino: 70,4**.
 - **Vários setores:** volumes, taxas e médias agregados; índices individuais nomeados. Não há média de IADs nem índice combinado.
 
-O JSON histórico, os rankings e a fórmula Python foram preservados. A revisão remove a segunda fórmula que existia na seleção da interface.
+A seleção altera as agregações exibidas, mas mantém o IAD de cada setor armazenado no JSON.
 
 ## Limitações e reprodução
 
 A base representa reclamações do canal público, não todos os consumidores. Mais registros podem refletir maior base de clientes ou adesão ao canal. Resolução alta não implica satisfação alta; a fonte não demonstra jornadas específicas de bots ou custos em dinheiro. O objetivo é formular hipóteses e priorizar investigação.
 
-O dashboard usa o JSON versionado, sem API em tempo de execução. A execução, as funções de cálculo e fixtures pequenas foram verificadas; a reconstrução integral dos quatro CSVs segue não validada. Siga o [README](../README.md). O QA é escrito em `docs/data_qa_summary.md` relativo ao diretório corrente, mesmo com outro `--out-dir`: execute a reconstrução opcional fora do checkout para preservar o QA histórico.
+O dashboard usa o JSON versionado, sem API em tempo de execução. A reconstrução integral requer os quatro CSVs de origem, não incluídos no repositório; o JSON agregado não permite recuperar os registros individuais. Siga o [README](../README.md). O QA é escrito em `docs/data_qa_summary.md` relativo ao diretório corrente, mesmo com outro `--out-dir`: execute a reconstrução opcional fora do checkout para preservar o QA histórico.

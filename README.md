@@ -16,7 +16,7 @@ A pergunta do título orienta uma leitura de esforço e atrito. O dashboard **n�
 
 ## Executar o dashboard
 
-Use **Node 20.19+ ou 22.12+** e **pnpm 10.4.1**, conforme o Vite instalado e `packageManager`. Ambiente conferido no Linux: Node 22.23.1, pnpm 10.4.1, React 19.2.6, TypeScript 5.9.3 e Vite 7.3.3. As versões JavaScript são resolvidas pelo lockfile existente.
+Use **Node 20.19+ ou 22.12+** e **pnpm 10.4.1**, conforme o Vite instalado e `packageManager`. Ambiente de referência no Linux: Node 22.23.1, pnpm 10.4.1, React 19.2.6, TypeScript 5.9.3 e Vite 7.3.3. As versões JavaScript são resolvidas pelo lockfile existente.
 
 Na raiz do checkout, em Bash:
 
@@ -72,9 +72,9 @@ O pipeline calcula antes de arredondar. O JSON preserva o IAD com uma casa decim
 
 ## Reconstrução opcional dos dados
 
-A execução com o JSON existente foi validada. **A ingestão integral dos quatro CSVs originais não foi validada nesta revisão**, pois eles não estavam disponíveis nas pastas consultadas. O JSON e o [QA histórico](docs/data_qa_summary.md) foram preservados.
+O dashboard já inclui o JSON agregado e o [resumo de qualidade dos dados](docs/data_qa_summary.md). A reconstrução requer os quatro CSVs originais, que não estão no repositório, e pode gerar resultados diferentes se os arquivos de origem forem atualizados.
 
-O pipeline requer Python e `requirements.txt`. Ambiente verificado: Python 3.10.12, pandas 2.3.3 e NumPy 2.2.6. Preparação em Bash:
+O pipeline requer Python e `requirements.txt`. Ambiente de referência: Python 3.10.12, pandas 2.3.3 e NumPy 2.2.6. Preparação em Bash:
 
 ```bash
 python3 -m venv .venv
@@ -84,7 +84,7 @@ python -m pip install -r requirements.txt
 
 Baixe os quatro arquivos para uma pasta separada. O leitor usa `;`, `utf-8-sig` e as colunas da metodologia. Lê todos os `*.csv` da pasta; evite cópias duplicadas ou arquivos alheios ao recorte.
 
-**O QA é escrito em `docs/data_qa_summary.md` relativo ao diretório corrente, mesmo com outro `--out-dir`.** Para preservar os arquivos históricos, execute o script a partir de um diretório temporário. Substitua `/caminho/para/os/csvs` pelo caminho absoluto da entrada:
+**O QA é escrito em `docs/data_qa_summary.md` relativo ao diretório corrente, mesmo com outro `--out-dir`.** Para manter os resultados da reconstrução separados da base versionada, execute o script a partir de um diretório temporário. Substitua `/caminho/para/os/csvs` pelo caminho absoluto da entrada:
 
 ```bash
 project_root="$PWD"
@@ -96,9 +96,9 @@ python "$project_root/scripts/build_dataset.py" \
 cd "$project_root"
 ```
 
-O JSON estará em `data/` e o QA em `docs/`, ambos dentro de `pipeline_run`. Inspecione-os separadamente; o comando não substitui a base histórica do dashboard.
+O JSON estará em `data/` e o QA em `docs/`, ambos dentro de `pipeline_run`. Os arquivos são gerados separadamente da base versionada do dashboard.
 
-## Verificações
+## Testes e build
 
 Com as dependências correspondentes instaladas:
 
@@ -121,6 +121,6 @@ Ela confere os 39 índices no resumo/ranking/benchmark, agregações, busca, lim
 
 ## Limitações
 
-A fonte representa reclamações do canal público, não todos os consumidores. Volume não mede base de clientes ou qualidade absoluta; resolução não equivale a satisfação. O IAD ajuda a priorizar perguntas, não substitui diagnóstico operacional. Não há medida monetária ou integração em tempo de execução com a fonte. A reconstrução integral continua pendente; o build atual emite um aviso de chunk maior que 500 kB, sem impedir sua geração.
+A fonte representa reclamações do canal público, não todos os consumidores. Volume não mede base de clientes ou qualidade absoluta; resolução não equivale a satisfação. O IAD ajuda a priorizar perguntas, não substitui diagnóstico operacional. Não há medida monetária ou integração em tempo de execução com a fonte. A reprodução integral depende dos CSVs de origem e não está estabelecida apenas pelo JSON agregado. O bundle gera um aviso de chunk maior que 500 kB; esse aviso não impede o build.
 
 Autor: **Rafael Rocha — Data Analyst | BI, Data Products & AI**.
